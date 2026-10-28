@@ -1,0 +1,120 @@
+# Part D — MongoDB aggregation pipelines (reference / Compass paste)
+
+# Paid bookings only (status BOOKED)
+# ------------------------------------------------
+# 1) Revenue per movie
+[
+  { "$match": { "status": "BOOKED" } },
+  {
+    "$group": {
+      "_id": "$movie_id",
+      "revenue": { "$sum": "$amount" },
+      "bookings": { "$sum": 1 },
+      "tickets_sold": { "$sum": { "$size": "$seats" } }
+    }
+  },
+  {
+    "$lookup": {
+      "from": "movies",
+      "localField": "_id",
+      "foreignField": "_id",
+      "as": "movie"
+    }
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "movie_id": "$_id",
+      "title": { "$ifNull": [{ "$arrayElemAt": ["$movie.title", 0] }, "$_id"] },
+      "revenue": 1,
+      "bookings": 1,
+      "tickets_sold": 1
+    }
+  },
+  { "$sort": { "revenue": -1 } }
+]
+
+# 2) Occupancy per show  (run on shows collection)
+[
+  {
+    "$project": {
+      "_id": 0,
+      "show_id": "$_id",
+      "movie_id": 1,
+      "city": 1,
+      "start_time": 1,
+      "total_seats": { "$size": "$seats" },
+      "booked_seats": {
+        "$size": {
+          "$filter": {
+            "input": "$seats",
+            "as": "s",
+            "cond": { "$eq": ["$$s.status", "BOOKED"] }
+          }
+        }
+      }
+    }
+  },
+  {
+    "$addFields": {
+      "occupancy_pct": {
+        "$cond": [
+          { "$eq": ["$total_seats", 0] },
+          0,
+          {
+            "$round": [
+              { "$multiply": [{ "$divide": ["$booked_seats", "$total_seats"] }, 100] },
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  { "$sort": { "occupancy_pct": -1 } }
+]
+
+# 3) Top movies by tickets sold
+[
+  { "$match": { "status": "BOOKED" } },
+  {
+    "$group": {
+      "_id": "$movie_id",
+      "tickets_sold": { "$sum": { "$size": "$seats" } },
+      "revenue": { "$sum": "$amount" },
+      "bookings": { "$sum": 1 }
+    }
+  },
+  { "$sort": { "tickets_sold": -1, "revenue": -1 } },
+  { "$limit": 5 }
+]
+
+# 4) Peak time slots (hour of show start_time, UTC)
+[
+  { "$match": { "status": "BOOKED" } },
+  {
+    "$lookup": {
+      "from": "shows",
+      "localField": "show_id",
+      "foreignField": "_id",
+      "as": "show"
+    }
+  },
+  { "$unwind": "$show" },
+  {
+    "$project": {
+      "amount": 1,
+      "tickets": { "$size": "$seats" },
+      "hour": { "$hour": "$show.start_time" }
+    }
+  },
+  {
+    "$group": {
+      "_id": "$hour",
+      "bookings": { "$sum": 1 },
+      "tickets_sold": { "$sum": "$tickets" },
+      "revenue": { "$sum": "$amount" }
+    }
+  },
+  { "$sort": { "_id": 1 } }
+]

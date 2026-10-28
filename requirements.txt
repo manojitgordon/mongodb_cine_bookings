@@ -1,0 +1,20 @@
+# FastAPI web framework (used later for the booking APIs)
+fastapi==0.115.6
+
+# ASGI server to run FastAPI locally
+uvicorn[standard]==0.34.0
+
+# Async MongoDB driver for FastAPI
+motor==3.6.0
+
+# Sync MongoDB driver (handy for one-off scripts like seeds.py)
+pymongo==4.9.2
+
+# Load variables from example.env / .env files
+python-dotenv==1.0.1
+
+# Request/response validation models (used with FastAPI later)
+pydantic==2.10.4
+
+# Kafka client for the CDC consumer (Part E)
+confluent-kafka==2.6.1

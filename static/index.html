@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineBook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-row">
+      <div class="brand" id="brandHome">CineBook</div>
+      <nav class="nav">
+        <button type="button" class="nav-link" id="navBook">Book</button>
+        <button type="button" class="nav-link" id="navBookings">My bookings</button>
+        <button type="button" class="nav-link" id="navAnalytics">Analytics</button>
+      </nav>
+    </div>
+    <p class="tagline">Pick a film. Lock your seats. Pay.</p>
+  </header>
+
+  <main class="shell">
+    <!-- STEP 1: Movies -->
+    <section id="step-movies" class="step active">
+      <div class="toolbar">
+        <h1>Now showing</h1>
+        <label class="field">
+          <span>City (required)</span>
+          <select id="cityFilter" required>
+            <option value="" disabled selected>Select city</option>
+            <option>Delhi</option>
+            <option>Mumbai</option>
+            <option>Bengaluru</option>
+          </select>
+        </label>
+      </div>
+      <p id="cityHint" class="muted">Select a city to browse movies and book.</p>
+      <div id="movieGrid" class="movie-grid"></div>
+    </section>
+
+    <!-- STEP 2: Shows -->
+    <section id="step-shows" class="step">
+      <button class="linkish" data-back="movies">&larr; Movies</button>
+      <h1 id="showsTitle">Shows</h1>
+      <div class="toolbar">
+        <label class="field">
+          <span>City (required)</span>
+          <select id="showCityFilter" required>
+            <option value="" disabled>Select city</option>
+            <option>Delhi</option>
+            <option>Mumbai</option>
+            <option>Bengaluru</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Date</span>
+          <input type="date" id="showDateFilter" />
+        </label>
+      </div>
+      <div id="showList" class="show-list"></div>
+    </section>
+
+    <!-- STEP 3: Seats -->
+    <section id="step-seats" class="step">
+      <button class="linkish" data-back="shows">&larr; Shows</button>
+      <h1 id="seatsTitle">Select seats</h1>
+      <p id="seatsMeta" class="meta"></p>
+      <div class="legend">
+        <span><i class="swatch available"></i> Available</span>
+        <span><i class="swatch selected"></i> Selected</span>
+        <span><i class="swatch held"></i> Held (payment pending)</span>
+        <span><i class="swatch booked"></i> Booked</span>
+      </div>
+      <div class="screen-label">SCREEN</div>
+      <div id="seatMap" class="seat-map"></div>
+      <div class="price-note" id="priceNote"></div>
+      <div class="action-bar">
+        <div>
+          <div class="muted">Selected</div>
+          <strong id="selectedSeatsLabel">None</strong>
+        </div>
+        <div>
+          <div class="muted">Amount</div>
+          <strong id="selectedAmount">₹0</strong>
+        </div>
+        <button id="goPayoutBtn" class="btn primary" disabled>Continue to payout</button>
+      </div>
+    </section>
+
+    <!-- STEP 4: Payout -->
+    <section id="step-payout" class="step">
+      <button class="linkish" id="backFromPayout" type="button">&larr; Seats (releases hold)</button>
+      <h1>Payout</h1>
+      <div class="hold-banner" id="holdBanner">
+        Seats locked for <strong id="holdCountdown">5:00</strong> — pay before they are released.
+      </div>
+      <div class="payout-card">
+        <div class="row"><span>Movie</span><strong id="payMovie"></strong></div>
+        <div class="row"><span>Theater</span><strong id="payTheater"></strong></div>
+        <div class="row"><span>Show time</span><strong id="payTime"></strong></div>
+        <div class="row"><span>Seats</span><strong id="paySeats"></strong></div>
+        <div class="row"><span>Booking</span><strong id="payBooking"></strong></div>
+        <div class="row"><span>Status</span><strong id="payStatus">AWAITING_PAYMENT</strong></div>
+        <div class="row total"><span>Total</span><strong id="payAmount"></strong></div>
+
+        <label class="field block">
+          <span>City</span>
+          <input id="payCity" type="text" readonly />
+        </label>
+
+        <label class="field block">
+          <span>Phone number</span>
+          <input
+            id="mobileInput"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]{6,10}"
+            maxlength="10"
+            minlength="6"
+            placeholder="6–10 digits only"
+          />
+        </label>
+        <p class="muted small">Phone must be numbers only, 6 to 10 digits.</p>
+
+        <p class="muted small">Seats stay held for 5 minutes while this booking is AWAITING_PAYMENT. Pay to mark it BOOKED. Leave or miss the window and it becomes EXPIRED.</p>
+        <button id="payBtn" class="btn primary wide">Pay now</button>
+        <p id="payoutError" class="error" hidden></p>
+      </div>
+    </section>
+
+    <!-- STEP 5: Confirmation -->
+    <section id="step-done" class="step">
+      <h1>Booked</h1>
+      <div class="ticket" id="ticketCard"></div>
+      <div class="action-bar">
+        <button id="bookAnotherBtn" class="btn">Book another</button>
+        <button id="viewBookingsBtn" class="btn primary">View my bookings</button>
+      </div>
+    </section>
+
+    <!-- STEP 6: My bookings -->
+    <section id="step-bookings" class="step">
+      <button class="linkish" id="backFromBookings" type="button">&larr; Book tickets</button>
+      <h1>My bookings</h1>
+      <div class="toolbar">
+        <label class="field">
+          <span>Phone number</span>
+          <input
+            id="bookingsPhone"
+            type="tel"
+            inputmode="numeric"
+            maxlength="10"
+            minlength="6"
+            placeholder="6–10 digits"
+          />
+        </label>
+        <button id="loadBookingsBtn" class="btn primary" type="button">Find bookings</button>
+        <button id="loadAllBookingsBtn" class="btn" type="button">Show recent</button>
+      </div>
+      <p id="bookingsHint" class="muted">Enter the phone used at payout, or show recent bookings.</p>
+      <div class="table-wrap">
+        <table class="bookings-table" id="bookingsTable">
+          <thead>
+            <tr>
+              <th>Booking</th>
+              <th>Phone</th>
+              <th>Show / Seats</th>
+              <th>Amount</th>
+              <th>Current status</th>
+              <th>Status history</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="bookingsBody"></tbody>
+        </table>
+      </div>
+      <p id="bookingsEmpty" class="empty" hidden>No bookings found.</p>
+    </section>
+
+    <!-- STEP 7: Analytics (Part D) -->
+    <section id="step-analytics" class="step">
+      <button class="linkish" id="backFromAnalytics" type="button">&larr; Book tickets</button>
+      <div class="toolbar">
+        <h1>Analytics</h1>
+        <button id="refreshAnalyticsBtn" class="btn primary" type="button">Refresh</button>
+      </div>
+      <p class="muted">Part D aggregations — paid bookings only (BOOKED).</p>
+
+      <h2 class="analytics-h">Revenue per movie</h2>
+      <div class="table-wrap">
+        <table class="bookings-table">
+          <thead>
+            <tr><th>Movie</th><th>Tickets</th><th>Bookings</th><th>Revenue</th></tr>
+          </thead>
+          <tbody id="analyticsRevenue"></tbody>
+        </table>
+      </div>
+
+      <h2 class="analytics-h">Top movies</h2>
+      <div class="table-wrap">
+        <table class="bookings-table">
+          <thead>
+            <tr><th>Rank</th><th>Movie</th><th>Tickets</th><th>Revenue</th></tr>
+          </thead>
+          <tbody id="analyticsTop"></tbody>
+        </table>
+      </div>
+
+      <h2 class="analytics-h">Occupancy per show</h2>
+      <div class="table-wrap">
+        <table class="bookings-table">
+          <thead>
+            <tr><th>Show</th><th>Movie</th><th>City</th><th>Booked</th><th>Occupancy</th></tr>
+          </thead>
+          <tbody id="analyticsOccupancy"></tbody>
+        </table>
+      </div>
+
+      <h2 class="analytics-h">Peak time slots (UTC hour)</h2>
+      <div class="table-wrap">
+        <table class="bookings-table">
+          <thead>
+            <tr><th>Hour</th><th>Bookings</th><th>Tickets</th><th>Revenue</th></tr>
+          </thead>
+          <tbody id="analyticsPeak"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
